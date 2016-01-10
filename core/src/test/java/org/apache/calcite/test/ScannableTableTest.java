@@ -324,7 +324,7 @@ public class ScannableTableTest {
       final ResultSet resultSet = statement.executeQuery();
       assertThat(scanCount.get(), is(1));
       assertThat(CalciteAssert.toString(resultSet),
-          equalTo("DEPTNO=10; NAME=Sales\n"));
+          equalTo("i=0\ni=10\n"));
       assertThat(scanCount.get(), is(1));
     }
   }

@@ -533,6 +533,9 @@ public class CalciteMetaImpl extends MetaImpl {
   @Override public Iterable<Object> createIterable(StatementHandle handle, QueryState state,
       Signature signature, List<TypedValue> parameterValues, Frame firstFrame) {
     // Drop QueryState
+    if (firstFrame != null && firstFrame.rows != null) {
+      return super.createIterable(handle, state, signature, parameterValues, firstFrame);
+    }
     return _createIterable(handle, signature, parameterValues, firstFrame);
   }
 
@@ -629,7 +632,8 @@ public class CalciteMetaImpl extends MetaImpl {
               LimitIterator.of(iterator, maxRowCount), list);
       final boolean done = maxRowCount == 0 || list.size() < maxRowCount;
       final Meta.Frame frame =
-          new Meta.Frame(0, done, (List<Object>) (List) rows);
+          //new Meta.Frame(0, done, (List<Object>) (List) rows);
+          new Meta.Frame(0, done, iterable);
 
       metaResultSet =
           MetaResultSet.create(h.connectionId, h.id, false, signature, frame);
