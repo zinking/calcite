@@ -458,7 +458,8 @@ public abstract class AvaticaConnection implements Connection {
       }
 
       try {
-        if (statement.isWrapperFor(AvaticaPreparedStatement.class)) {
+        boolean isLocalDriver = meta.getClass().getSimpleName().equals("CalciteMetaImpl");
+        if (statement.isWrapperFor(AvaticaPreparedStatement.class) && !isLocalDriver) {
           final AvaticaPreparedStatement pstmt = (AvaticaPreparedStatement) statement;
           final Meta.ExecuteResult executeResult =
               meta.execute(pstmt.handle, pstmt.getParameterValues(),
