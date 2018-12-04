@@ -530,6 +530,95 @@ ORDER BY symbol;
 
 !ok
 
+#match recognize - cast in aggregation
+SELECT M.Symbol, M.Tstamp, M.Price, M.RunningAvg, M.FinalAvg
+FROM TICKER MATCH_RECOGNIZE (
+     PARTITION BY Symbol
+     ORDER BY tstamp
+     MEASURES RUNNING AVG (CAST(A.Price AS Int)) AS RunningAvg,
+              FINAL AVG (CAST(A.Price AS Int)) AS FinalAvg
+     ALL ROWS PER MATCH
+     PATTERN (A+)
+     DEFINE A AS A.Price >= AVG (A.Price)
+     ) M
+;
++--------+-----------+-------+-------------------------------------------+-------------------------------------------+
+| SYMBOL |  TSTAMP   | PRICE |                RUNNINGAVG                 |                 FINALAVG                  |
++--------+-----------+-------+-------------------------------------------+-------------------------------------------+
+| ACME   | 01-DEC-17 |    12 |                                        12 |                                      18.8 |
+| ACME   | 01-DEC-17 |    12 |                                        12 |                                      18.8 |
+| ACME   | 02-DEC-17 |    17 | 13.66666666666666666666666666666666666667 |                                      18.8 |
+| ACME   | 02-DEC-17 |    17 |                                      14.5 |                                      18.8 |
+| ACME   | 03-DEC-17 |    19 |                                      15.4 |                                      18.8 |
+| ACME   | 03-DEC-17 |    19 |                                        16 |                                      18.8 |
+| ACME   | 04-DEC-17 |    21 | 16.71428571428571428571428571428571428571 |                                      18.8 |
+| ACME   | 04-DEC-17 |    21 |                                     17.25 |                                      18.8 |
+| ACME   | 05-DEC-17 |    25 | 18.11111111111111111111111111111111111111 |                                      18.8 |
+| ACME   | 05-DEC-17 |    25 |                                      18.8 |                                      18.8 |
+| ACME   | 06-DEC-17 |    12 |                                        12 |                                      19.2 |
+| ACME   | 06-DEC-17 |    12 |                                        12 |                                      19.2 |
+| ACME   | 07-DEC-17 |    15 |                                        13 |                                      19.2 |
+| ACME   | 07-DEC-17 |    15 |                                      13.5 |                                      19.2 |
+| ACME   | 08-DEC-17 |    20 |                                      14.8 |                                      19.2 |
+| ACME   | 08-DEC-17 |    20 | 15.66666666666666666666666666666666666667 |                                      19.2 |
+| ACME   | 09-DEC-17 |    24 | 16.85714285714285714285714285714285714286 |                                      19.2 |
+| ACME   | 09-DEC-17 |    24 |                                     17.75 |                                      19.2 |
+| ACME   | 10-DEC-17 |    25 | 18.55555555555555555555555555555555555556 |                                      19.2 |
+| ACME   | 10-DEC-17 |    25 |                                      19.2 |                                      19.2 |
+| ACME   | 11-DEC-17 |    19 |                                        19 |                                        19 |
+| ACME   | 11-DEC-17 |    19 |                                        19 |                                        19 |
+| ACME   | 12-DEC-17 |    15 |                                        15 | 21.66666666666666666666666666666666666667 |
+| ACME   | 12-DEC-17 |    15 |                                        15 | 21.66666666666666666666666666666666666667 |
+| ACME   | 13-DEC-17 |    25 | 18.33333333333333333333333333333333333333 | 21.66666666666666666666666666666666666667 |
+| ACME   | 13-DEC-17 |    25 |                                        20 | 21.66666666666666666666666666666666666667 |
+| ACME   | 14-DEC-17 |    25 |                                        21 | 21.66666666666666666666666666666666666667 |
+| ACME   | 14-DEC-17 |    25 | 21.66666666666666666666666666666666666667 | 21.66666666666666666666666666666666666667 |
+| ACME   | 15-DEC-17 |    14 |                                        14 |                                        14 |
+| ACME   | 15-DEC-17 |    14 |                                        14 |                                        14 |
+| ACME   | 16-DEC-17 |    12 |                                        12 |                                        19 |
+| ACME   | 16-DEC-17 |    12 |                                        12 |                                        19 |
+| ACME   | 17-DEC-17 |    14 | 12.66666666666666666666666666666666666667 |                                        19 |
+| ACME   | 17-DEC-17 |    14 |                                        13 |                                        19 |
+| ACME   | 18-DEC-17 |    24 |                                      15.2 |                                        19 |
+| ACME   | 18-DEC-17 |    24 | 16.66666666666666666666666666666666666667 |                                        19 |
+| ACME   | 19-DEC-17 |    23 | 17.57142857142857142857142857142857142857 |                                        19 |
+| ACME   | 19-DEC-17 |    23 |                                     18.25 |                                        19 |
+| ACME   | 20-DEC-17 |    22 | 18.66666666666666666666666666666666666667 |                                        19 |
+| ACME   | 20-DEC-17 |    22 |                                        19 |                                        19 |
++--------+-----------+-------+-------------------------------------------+-------------------------------------------+
+(40 rows)
+
+!ok
+
+#match recognize - max expression in aggregation
+SELECT M.Symbol,  M.RunningAvg, M.FinalAvg
+FROM TICKER MATCH_RECOGNIZE (
+     PARTITION BY Symbol
+     ORDER BY tstamp
+     MEASURES RUNNING AVG (A.Price) AS RunningAvg,
+              FINAL AVG (A.Price) AS FinalAvg
+     ONE ROW PER MATCH
+     PATTERN (A+)
+     DEFINE A AS A.Price = MAX (A.Price)
+     ) M
+;
++--------+-------------------------------------------+-------------------------------------------+
+| SYMBOL |                RUNNINGAVG                 |                 FINALAVG                  |
++--------+-------------------------------------------+-------------------------------------------+
+| ACME   |                                      18.8 |                                      18.8 |
+| ACME   |                                      19.2 |                                      19.2 |
+| ACME   |                                        19 |                                        19 |
+| ACME   | 21.66666666666666666666666666666666666667 | 21.66666666666666666666666666666666666667 |
+| ACME   |                                        14 |                                        14 |
+| ACME   | 16.66666666666666666666666666666666666667 | 16.66666666666666666666666666666666666667 |
+| ACME   |                                        23 |                                        23 |
+| ACME   |                                        22 |                                        22 |
++--------+-------------------------------------------+-------------------------------------------+
+(8 rows)
+
+!ok
+
+
 #match recognize - ORA-62505: expression needs to be aliased
 SELECT *
 FROM Ticker MATCH_RECOGNIZE(
@@ -604,6 +693,21 @@ FROM Ticker MATCH_RECOGNIZE (
         UP AS UP.price > PREV(UP.price)
      ) MR
 ORDER BY MR.symbol, MR.start_tstamp;
+
+!error
+
+#match recognize - ORA-00907: missing right parenthesis
+SELECT M.Symbol, M.Tstamp, M.Price, M.RunningAvg, M.FinalAvg
+FROM TICKER MATCH_RECOGNIZE (
+     PARTITION BY Symbol
+     ORDER BY tstamp
+     MEASURES RUNNING CAST(AVG (A.Price) as Int) AS RunningAvg,
+              FINAL CAST(AVG (A.Price) as Int) AS FinalAvg
+     ALL ROWS PER MATCH
+     PATTERN (A+)
+     DEFINE A AS A.Price >= AVG (A.Price)
+     ) M
+;
 
 !error
 
