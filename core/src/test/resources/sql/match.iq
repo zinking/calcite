@@ -618,6 +618,215 @@ FROM TICKER MATCH_RECOGNIZE (
 
 !ok
 
+#match recognize - expressions in define
+SELECT M.Symbol,  M.RunningAvg, M.FinalAvg
+FROM TICKER MATCH_RECOGNIZE (
+     PARTITION BY Symbol
+     ORDER BY tstamp
+     MEASURES RUNNING AVG (A.Price) AS RunningAvg,
+              FINAL AVG (A.Price) AS FinalAvg
+     ONE ROW PER MATCH
+     PATTERN (A+)
+     DEFINE A AS A.Price = MAX (A.Price)
+        AND A.symbol in ('ACME', 'BCME')
+        AND length(A.symbol) > 0
+     ) M
+;
++--------+-------------------------------------------+-------------------------------------------+
+| SYMBOL |                RUNNINGAVG                 |                 FINALAVG                  |
++--------+-------------------------------------------+-------------------------------------------+
+| ACME   |                                      18.8 |                                      18.8 |
+| ACME   |                                      19.2 |                                      19.2 |
+| ACME   |                                        19 |                                        19 |
+| ACME   | 21.66666666666666666666666666666666666667 | 21.66666666666666666666666666666666666667 |
+| ACME   |                                        14 |                                        14 |
+| ACME   | 16.66666666666666666666666666666666666667 | 16.66666666666666666666666666666666666667 |
+| ACME   |                                        23 |                                        23 |
+| ACME   |                                        22 |                                        22 |
++--------+-------------------------------------------+-------------------------------------------+
+(8 rows)
+
+!ok
+
+#match recognize - pattern zero or more
+SELECT M.Symbol,  M.RunningAvg, M.FinalAvg
+FROM TICKER MATCH_RECOGNIZE (
+     PARTITION BY Symbol
+     ORDER BY tstamp
+     MEASURES RUNNING AVG (A.Price) AS RunningAvg,
+              FINAL AVG (A.Price) AS FinalAvg
+     ONE ROW PER MATCH
+     PATTERN (A?)
+     DEFINE A AS A.Price = MAX (A.Price)
+     ) M
+;
++--------+------------+----------+
+| SYMBOL | RUNNINGAVG | FINALAVG |
++--------+------------+----------+
+| ACME   |         12 |       12 |
+| ACME   |         12 |       12 |
+| ACME   |         17 |       17 |
+| ACME   |         17 |       17 |
+| ACME   |         19 |       19 |
+| ACME   |         19 |       19 |
+| ACME   |         21 |       21 |
+| ACME   |         21 |       21 |
+| ACME   |         25 |       25 |
+| ACME   |         25 |       25 |
+| ACME   |         12 |       12 |
+| ACME   |         12 |       12 |
+| ACME   |         15 |       15 |
+| ACME   |         15 |       15 |
+| ACME   |         20 |       20 |
+| ACME   |         20 |       20 |
+| ACME   |         24 |       24 |
+| ACME   |         24 |       24 |
+| ACME   |         25 |       25 |
+| ACME   |         25 |       25 |
+| ACME   |         19 |       19 |
+| ACME   |         19 |       19 |
+| ACME   |         15 |       15 |
+| ACME   |         15 |       15 |
+| ACME   |         25 |       25 |
+| ACME   |         25 |       25 |
+| ACME   |         25 |       25 |
+| ACME   |         25 |       25 |
+| ACME   |         14 |       14 |
+| ACME   |         14 |       14 |
+| ACME   |         12 |       12 |
+| ACME   |         12 |       12 |
+| ACME   |         14 |       14 |
+| ACME   |         14 |       14 |
+| ACME   |         24 |       24 |
+| ACME   |         24 |       24 |
+| ACME   |         23 |       23 |
+| ACME   |         23 |       23 |
+| ACME   |         22 |       22 |
+| ACME   |         22 |       22 |
++--------+------------+----------+
+(40 rows)
+
+!ok
+
+#match recognize - pattern zero or more reluctant
+SELECT M.Symbol,  M.RunningAvg, M.FinalAvg
+FROM TICKER MATCH_RECOGNIZE (
+     PARTITION BY Symbol
+     ORDER BY tstamp
+     MEASURES RUNNING AVG (A.Price) AS RunningAvg,
+              FINAL AVG (A.Price) AS FinalAvg
+     ONE ROW PER MATCH
+     PATTERN (A??)
+     DEFINE A AS A.Price = MAX (A.Price)
+     ) M
+;
++--------+------------+----------+
+| SYMBOL | RUNNINGAVG | FINALAVG |
++--------+------------+----------+
+| ACME   |         -  |       -  |
+| ACME   |         -  |       -  |
+| ACME   |         -  |       -  |
+| ACME   |         -  |       -  |
+| ACME   |         -  |       -  |
+| ACME   |         -  |       -  |
+| ACME   |         -  |       -  |
+| ACME   |         -  |       -  |
+| ACME   |         -  |       -  |
+| ACME   |         -  |       -  |
+| ACME   |         -  |       -  |
+| ACME   |         -  |       -  |
+| ACME   |         -  |       -  |
+| ACME   |         -  |       -  |
+| ACME   |         -  |       -  |
+| ACME   |         -  |       -  |
+| ACME   |         -  |       -  |
+| ACME   |         -  |       -  |
+| ACME   |         -  |       -  |
+| ACME   |         -  |       -  |
+| ACME   |         -  |       -  |
+| ACME   |         -  |       -  |
+| ACME   |         -  |       -  |
+| ACME   |         -  |       -  |
+| ACME   |         -  |       -  |
+| ACME   |         -  |       -  |
+| ACME   |         -  |       -  |
+| ACME   |         -  |       -  |
+| ACME   |         -  |       -  |
+| ACME   |         -  |       -  |
+| ACME   |         -  |       -  |
+| ACME   |         -  |       -  |
+| ACME   |         -  |       -  |
+| ACME   |         -  |       -  |
+| ACME   |         -  |       -  |
+| ACME   |         -  |       -  |
+| ACME   |         -  |       -  |
+| ACME   |         -  |       -  |
+| ACME   |         -  |       -  |
+| ACME   |         -  |       -  |
++--------+------------+----------+
+(40 rows)
+
+!ok
+
+#match recognize - pattern match one or more reluctant
+SELECT M.Symbol,  M.RunningAvg, M.FinalAvg
+FROM TICKER MATCH_RECOGNIZE (
+     PARTITION BY Symbol
+     ORDER BY tstamp
+     MEASURES RUNNING AVG (A.Price) AS RunningAvg,
+              FINAL AVG (A.Price) AS FinalAvg
+     ONE ROW PER MATCH
+     PATTERN (A+?)
+     DEFINE A AS A.Price = MAX (A.Price)
+     ) M
+;
++--------+------------+----------+
+| SYMBOL | RUNNINGAVG | FINALAVG |
++--------+------------+----------+
+| ACME   |         12 |       12 |
+| ACME   |         12 |       12 |
+| ACME   |         17 |       17 |
+| ACME   |         17 |       17 |
+| ACME   |         19 |       19 |
+| ACME   |         19 |       19 |
+| ACME   |         21 |       21 |
+| ACME   |         21 |       21 |
+| ACME   |         25 |       25 |
+| ACME   |         25 |       25 |
+| ACME   |         12 |       12 |
+| ACME   |         12 |       12 |
+| ACME   |         15 |       15 |
+| ACME   |         15 |       15 |
+| ACME   |         20 |       20 |
+| ACME   |         20 |       20 |
+| ACME   |         24 |       24 |
+| ACME   |         24 |       24 |
+| ACME   |         25 |       25 |
+| ACME   |         25 |       25 |
+| ACME   |         19 |       19 |
+| ACME   |         19 |       19 |
+| ACME   |         15 |       15 |
+| ACME   |         15 |       15 |
+| ACME   |         25 |       25 |
+| ACME   |         25 |       25 |
+| ACME   |         25 |       25 |
+| ACME   |         25 |       25 |
+| ACME   |         14 |       14 |
+| ACME   |         14 |       14 |
+| ACME   |         12 |       12 |
+| ACME   |         12 |       12 |
+| ACME   |         14 |       14 |
+| ACME   |         14 |       14 |
+| ACME   |         24 |       24 |
+| ACME   |         24 |       24 |
+| ACME   |         23 |       23 |
+| ACME   |         23 |       23 |
+| ACME   |         22 |       22 |
+| ACME   |         22 |       22 |
++--------+------------+----------+
+(40 rows)
+
+!ok
 
 #match recognize - ORA-62505: expression needs to be aliased
 SELECT *
@@ -711,4 +920,41 @@ FROM TICKER MATCH_RECOGNIZE (
 
 !error
 
+#match recognize - interval syntax ORA-00905: missing keyword
+#http://esper.espertech.com/release-5.1.0/esper-reference/html/match-recognize.html#match-recognize-interval
+SELECT M.Symbol,  M.RunningAvg, M.FinalAvg
+FROM TICKER MATCH_RECOGNIZE (
+     PARTITION BY Symbol
+     ORDER BY tstamp
+     MEASURES RUNNING AVG (A.Price) AS RunningAvg,
+              FINAL AVG (A.Price) AS FinalAvg
+     ONE ROW PER MATCH
+     PATTERN (A+)
+     interval 5 seconds
+     DEFINE A AS A.Price = MAX (A.Price)
+        AND A.symbol in ('ACME', 'BCME')
+        AND length(A.symbol) > 0
+     ) M
+;
+
+!error
+
+
+#match recognize - interval syntax ORA-00905: missing keyword
+SELECT M.Symbol,  M.RunningAvg, M.FinalAvg
+FROM TICKER MATCH_RECOGNIZE (
+     PARTITION BY Symbol
+     ORDER BY tstamp
+     MEASURES RUNNING AVG (A.Price) AS RunningAvg,
+              FINAL AVG (A.Price) AS FinalAvg
+     ONE ROW PER MATCH
+     PATTERN (A+)
+     interval 5 seconds or terminated
+     DEFINE A AS A.Price = MAX (A.Price)
+        AND A.symbol in ('ACME', 'BCME')
+        AND length(A.symbol) > 0
+     ) M
+;
+
+!error
 # End match.iq
