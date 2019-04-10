@@ -6834,7 +6834,6 @@ public class JdbcTest {
   }
 
   @Test public void testMatchSimple() {
-    Hook.JAVA_PLAN.add((Consumer<?>)System.out::println);
     final String sql = "select *\n"
             + "from \"hr\".\"emps\" match_recognize (\n"
             + "  order by \"empid\" desc\n"
@@ -6869,21 +6868,20 @@ public class JdbcTest {
   }
 
   @Test public void testMatch() {
-    Hook.JAVA_PLAN.add((Consumer<Object>)o -> System.out.println(o));
     final String sql = "select *\n"
         + "from \"hr\".\"emps\" match_recognize (\n"
         + "  order by \"empid\" desc\n"
         + "  measures \"commission\" as c,\n"
         + "    \"empid\" as empid\n"
         + "  pattern (s up)\n"
-        + "  define up as up.\"commission\" > prev(up.\"commission\"))";
+        + "  define up as up.\"commission\" < prev(up.\"commission\"))";
     final String convert = ""
         + "LogicalProject(C=[$0], EMPID=[$1])\n"
         + "  LogicalMatch(partition=[{}], order=[[0 DESC]], "
         + "outputFields=[[C, EMPID]], allRows=[false], "
         + "after=[FLAG(SKIP TO NEXT ROW)], pattern=[('S', 'UP')], "
         + "isStrictStarts=[false], isStrictEnds=[false], subsets=[[]], "
-        + "patternDefinitions=[[>(PREV(UP.$4, 0), PREV(UP.$4, 1))]], "
+        + "patternDefinitions=[[<(PREV(UP.$4, 0), PREV(UP.$4, 1))]], "
         + "inputFields=[[empid, deptno, name, salary, commission]])\n"
         + "    EnumerableTableScan(table=[[hr, emps]])\n";
     final String plan = "PLAN="
@@ -6891,7 +6889,7 @@ public class JdbcTest {
         + "outputFields=[[C, EMPID]], allRows=[false], "
         + "after=[FLAG(SKIP TO NEXT ROW)], pattern=[('S', 'UP')], "
         + "isStrictStarts=[false], isStrictEnds=[false], subsets=[[]], "
-        + "patternDefinitions=[[>(PREV(UP.$4, 0), PREV(UP.$4, 1))]], "
+        + "patternDefinitions=[[<(PREV(UP.$4, 0), PREV(UP.$4, 1))]], "
         + "inputFields=[[empid, deptno, name, salary, commission]])\n"
         + "  EnumerableTableScan(table=[[hr, emps]])";
     CalciteAssert.that()
@@ -6899,7 +6897,7 @@ public class JdbcTest {
         .query(sql)
         .convertContains(convert)
         .explainContains(plan)
-        .returns("C=1000; EMPID=100");
+        .returns("C=1000; EMPID=100\nC=500; EMPID=200\n");
   }
 
   @Test public void testJsonType() {
