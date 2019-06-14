@@ -14,32 +14,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.calcite.rel.mutable;
+package org.apache.calcite.runtime.mr;
 
-/** Type of {@code MutableRel}. */
-enum MutableRelType {
-  AGGREGATE,
-  CALC,
-  COLLECT,
-  CORRELATE,
-  EXCHANGE,
-  FILTER,
-  INTERSECT,
-  JOIN,
-  MINUS,
-  PROJECT,
-  SAMPLE,
-  SEMIJOIN,
-  SORT,
-  TABLE_FUNCTION_SCAN,
-  TABLE_MODIFY,
-  TABLE_SCAN,
-  UNCOLLECT,
-  UNION,
-  VALUES,
-  WINDOW,
-  HOLDER,
-  MATCH_RECOGNIZE
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+/**
+ * Matching Factory
+ */
+public class MatchingFactory {
+
+  private List<String> aggrFun = null;
+
+  private Map<String, Set<String>> reverseSubSets = null;
+
+  public MatchingFactory(List<String> funs, Map<String, Set<String>> subsets) {
+    this.aggrFun = new ArrayList<>(funs);
+    this.reverseSubSets = new HashMap<>(subsets);
+  }
+
+  public Matching create(int nextTupleIdx) {
+    return new Matching(0, nextTupleIdx, aggrFun, reverseSubSets);
+  }
+
 }
 
-// End MutableRelType.java
+// End MatchingFactory.java

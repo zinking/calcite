@@ -14,32 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.calcite.rel.mutable;
 
-/** Type of {@code MutableRel}. */
-enum MutableRelType {
-  AGGREGATE,
-  CALC,
-  COLLECT,
-  CORRELATE,
-  EXCHANGE,
-  FILTER,
-  INTERSECT,
-  JOIN,
-  MINUS,
-  PROJECT,
-  SAMPLE,
-  SEMIJOIN,
-  SORT,
-  TABLE_FUNCTION_SCAN,
-  TABLE_MODIFY,
-  TABLE_SCAN,
-  UNCOLLECT,
-  UNION,
-  VALUES,
-  WINDOW,
-  HOLDER,
-  MATCH_RECOGNIZE
-}
+/**
+ * Match Recognize Runtime functions
+ */
+@PackageMarker
+package org.apache.calcite.runtime.mr;
 
-// End MutableRelType.java
+import org.apache.calcite.avatica.util.PackageMarker;
+
+// End package-info.java

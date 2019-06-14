@@ -16,24 +16,28 @@
  */
 package org.apache.calcite.runtime;
 
-import org.apache.calcite.util.ImmutableBitSet;
-
 import com.google.common.collect.ImmutableList;
+import org.apache.calcite.rel.core.Match;
+import org.apache.calcite.util.ImmutableBitSet;
 
 import java.util.Objects;
 
-/** A finite-state automaton.
+/** A finite-state automaton (Nondeterministic).
+ *
+ * <p>It is used to implement the {@link Match}
+ * relational expression (for the {@code MATCH_RECOGNIZE} clause in SQL).
  *
  * @see Pattern
  * @see AutomatonBuilder
  */
-class Automaton {
+public class Automaton {
   final State startState;
   final State endState;
   private final ImmutableList<SymbolTransition> transitions;
   private final ImmutableList<EpsilonTransition> epsilonTransitions;
   final ImmutableList<String> symbolNames;
 
+  /** Use an {@link AutomatonBuilder}. */
   Automaton(State startState, State endState,
       ImmutableList<SymbolTransition> transitions,
       ImmutableList<EpsilonTransition> epsilonTransitions,
@@ -73,6 +77,14 @@ class Automaton {
     }
   }
 
+  public ImmutableList<SymbolTransition> getTransitions() {
+    return this.transitions;
+  }
+
+  public ImmutableList<EpsilonTransition> getEpsilonTransitions() {
+    return this.epsilonTransitions;
+  }
+
   /** Node in the finite-state automaton. A state has a number of
    * transitions to other states, each labeled with the symbol that
    * causes that transition. */
@@ -81,6 +93,27 @@ class Automaton {
 
     State(int id) {
       this.id = id;
+    }
+
+    @Override public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      State state = (State) o;
+      return id == state.id;
+    }
+
+    @Override public int hashCode() {
+      return Objects.hash(id);
+    }
+
+    @Override public String toString() {
+      return "State{"
+          + "id=" + id
+          + '}';
     }
   }
 
@@ -119,6 +152,7 @@ class Automaton {
       return "epsilon:" + fromState.id + "->" + toState.id;
     }
   }
+
 }
 
 // End Automaton.java

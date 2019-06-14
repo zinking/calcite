@@ -14,32 +14,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.calcite.rel.mutable;
+package org.apache.calcite.runtime.mr;
 
-/** Type of {@code MutableRel}. */
-enum MutableRelType {
-  AGGREGATE,
-  CALC,
-  COLLECT,
-  CORRELATE,
-  EXCHANGE,
-  FILTER,
-  INTERSECT,
-  JOIN,
-  MINUS,
-  PROJECT,
-  SAMPLE,
-  SEMIJOIN,
-  SORT,
-  TABLE_FUNCTION_SCAN,
-  TABLE_MODIFY,
-  TABLE_SCAN,
-  UNCOLLECT,
-  UNION,
-  VALUES,
-  WINDOW,
-  HOLDER,
-  MATCH_RECOGNIZE
+/**
+ * Aggregate type
+ */
+public enum AggregateEnum {
+  COUNT_STAR("COUNT_STAR"),
+  COUNT("COUNT"),
+  SUM("SUM"),
+  MAX("MAX"),
+  MIN("MIN");
+
+  private String name;
+
+  AggregateEnum(String name) {
+    this.name = name;
+  }
 }
 
-// End MutableRelType.java
+// End AggregateEnum.java

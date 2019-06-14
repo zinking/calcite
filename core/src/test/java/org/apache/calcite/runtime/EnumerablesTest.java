@@ -31,6 +31,8 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
+import java.util.function.Consumer;
 
 import static com.google.common.collect.Lists.newArrayList;
 
@@ -205,6 +207,44 @@ public class EnumerablesTest {
         EnumerableDefaults.nestedLoopJoin(EMPS.take(0), DEPTS.take(0), EQUAL_DEPTNO,
             EMP_DEPT_TO_STRING, JoinType.FULL).toList().toString(),
         equalTo("[]"));
+  }
+
+  @Test
+  public void testMatch() {
+    final Enumerable<Emp> emps = Linq4j.asEnumerable(
+            Arrays.asList(
+                    new Emp(20, "Theodore"),
+                    new Emp(10, "Fred"),
+                    new Emp(20, "Sebastian"),
+                    new Emp(30, "Joe")));
+
+    final Pattern p =
+            Pattern.builder()
+                    .symbol("A")
+                    .symbol("B").seq()
+                    .build();
+
+    final Matcher<Emp> matcher =
+            Matcher.<Emp>builder(p.toAutomaton())
+                    .add("A", (s) -> s.get().deptno == 20)
+                    .add("B", (s) -> s.get().deptno != 20)
+                    .build();
+
+    Enumerables.Emitter<Emp, String> emitter = new Enumerables.Emitter<Emp, String>() {
+
+      @Override
+      public void emit(List<Emp> rows, List<Integer> rowStates, List<String> rowSymbols, int match, Consumer<String> consumer) {
+        for (int i = 0; i < rows.size(); i++) {
+          if ("A".equals(rowSymbols.get(i))) {
+            consumer.accept(String.format(Locale.ENGLISH, "%s %s %d", rows, rowStates, match));
+          }
+        }
+      }
+    };
+
+    Enumerable<String> matches = Enumerables.match(emps, emp -> 0L, matcher, emitter, 0, 0);
+    assertThat(matches.toList().toString(),
+            equalTo("[[Emp(20, Theodore), Emp(10, Fred)] null 1, [Emp(20, Sebastian), Emp(30, Joe)] null 2]"));
   }
 
   /** Employee record. */

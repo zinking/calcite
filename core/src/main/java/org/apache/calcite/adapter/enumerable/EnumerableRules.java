@@ -137,9 +137,14 @@ public class EnumerableRules {
       EnumerableRules.ENUMERABLE_TABLE_SCAN_RULE,
       EnumerableRules.ENUMERABLE_TABLE_FUNCTION_SCAN_RULE);
 
+
   public static List<RelOptRule> rules() {
     return ENUMERABLE_RULES;
   }
+
+
+  public static final EnumerableMatchRule ENUMERABLE_MATCH_RECOGNIZE_RULE =
+      new EnumerableMatchRule();
 }
 
 // End EnumerableRules.java

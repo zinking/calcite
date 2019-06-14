@@ -21,15 +21,15 @@ import org.apache.calcite.linq4j.AbstractEnumerable;
 import org.apache.calcite.linq4j.Enumerable;
 import org.apache.calcite.linq4j.Enumerator;
 import org.apache.calcite.linq4j.function.Function1;
-import org.apache.calcite.util.CircularArrayList;
-
-import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
@@ -70,28 +70,29 @@ public class Enumerables {
     return () -> toRow(supplier.get());
   }
 
-  public static <E, TResult> Enumerable<TResult> match(
+  public static <E, TKey, TResult> Enumerable<TResult> match(
       Enumerable<E> enumerable,
-      List<String> stateNames,
-      Automaton<E> automaton,
-      Emitter<E, TResult> emitter) {
+      final Function1<E, TKey> keySelector,
+      Matcher<E> matcher,
+      Emitter<E, TResult> emitter, int history, int future) {
     return new AbstractEnumerable<TResult>() {
       public Enumerator<TResult> enumerator() {
         return new Enumerator<TResult>() {
           final Enumerator<E> inputEnumerator = enumerable.enumerator();
 
-          // When we implement partitions there will be one of these per
-          // partition.
-          final PartitionState partitionState = new PartitionState();
+          // State of each partition.
+          final Map<TKey, Matcher.PartitionState<E>> partitionStates =
+              new HashMap<>();
 
           int inputRow = -1;
-
-          final CircularArrayList<E> recentRows = new CircularArrayList<>();
 
           final Deque<TResult> emitRows = new ArrayDeque<>();
 
           /** Current result row. Null if no row is ready. */
           TResult resultRow;
+
+          /** Match counter is 1 based in Oracle */
+          final AtomicInteger matchCounter = new AtomicInteger(1);
 
           public TResult current() {
             Objects.requireNonNull(resultRow);
@@ -111,7 +112,21 @@ public class Enumerables {
                 return false;
               }
               ++inputRow;
-              final E e = inputEnumerator.current();
+              final E row = inputEnumerator.current();
+              final TKey key = keySelector.apply(row);
+              final Matcher.PartitionState<E> partitionState =
+                  partitionStates.computeIfAbsent(key,
+                      k -> matcher.createPartitionState(history, future));
+
+              partitionState.getMemoryFactory().add(row);
+
+
+              matcher.matchOne(partitionState.getRows(), partitionState,
+                  // TODO 26.12.18 jf: add row states (whatever this is?)
+                  list -> {
+                    emitter.emit(list, null, null, matchCounter.getAndIncrement(), emitRows::add);
+                  });
+/*
               recentRows.add(e);
               int earliestRetainedRow = Integer.MAX_VALUE;
               for (int i = 0; i < partitionState.incompleteMatches.size(); i++) {
@@ -152,6 +167,7 @@ public class Enumerables {
                 partitionState.incompleteMatches.add(
                     new MatchState(inputRow, state));
               }
+*/
             }
           }
 
@@ -171,7 +187,7 @@ public class Enumerables {
    * element, tells the next state.
    *
    * @param <E> element type */
-  public interface Automaton<E> {
+  public interface OldAutomaton<E> {
     int START_STATE = 0;
     int ACCEPT = -1;
     int FAIL = -2;
@@ -185,26 +201,8 @@ public class Enumerables {
    * @param <E> element type
    * @param <TResult> result type */
   public interface Emitter<E, TResult> {
-    List<TResult> emit(List<E> rows, List<Integer> rowStates, int match);
-  }
-
-  /** State of a partition.
-   *
-   * <p>(Currently there is only one partition.) */
-  private static class PartitionState {
-    final List<MatchState> incompleteMatches = new ArrayList<>();
-    int matchCount;
-  }
-
-  /** The state of an incomplete match. */
-  private static class MatchState {
-    final int firstRow;
-    int state;
-
-    private MatchState(int firstRow, int state) {
-      this.firstRow = firstRow;
-      this.state = state;
-    }
+    void emit(List<E> rows, List<Integer> rowStates, List<String> rowSymbols, int match,
+        Consumer<TResult> consumer);
   }
 }
 

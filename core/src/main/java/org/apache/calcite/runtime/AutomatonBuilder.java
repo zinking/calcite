@@ -32,11 +32,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-/** Builds a state-transition graph for deterministic finite automaton.
- * Helps us write tests for automata.
- * In production code, the automaton is created based on a parse tree.
- */
-class AutomatonBuilder {
+/** Builds a state-transition graph for deterministic finite automaton. */
+public class AutomatonBuilder {
   private final Map<String, Integer> symbolIds = new HashMap<>();
   private final List<State> stateList = new ArrayList<>();
   private final List<Transition> transitionList = new ArrayList<>();
@@ -45,12 +42,12 @@ class AutomatonBuilder {
 
   /** Adds a pattern as a start-to-end transition. */
   AutomatonBuilder add(Pattern pattern) {
-    return add((Pattern.AbstractPattern) pattern, startState, endState);
+    return add(pattern, startState, endState);
   }
 
   private AutomatonBuilder add(Pattern pattern, State fromState,
       State toState) {
-    Pattern.AbstractPattern p = (Pattern.AbstractPattern) pattern;
+    final Pattern.AbstractPattern p = (Pattern.AbstractPattern) pattern;
     switch (p.op) {
     case SEQ:
       final Pattern.OpPattern pSeq = (Pattern.OpPattern) p;
@@ -72,6 +69,15 @@ class AutomatonBuilder {
     case SYMBOL:
       final Pattern.SymbolPattern pSymbol = (Pattern.SymbolPattern) p;
       return symbol(fromState, toState, pSymbol.name);
+
+    case OR:
+      final Pattern.OpPattern pOr = (Pattern.OpPattern) p;
+      return or(fromState, toState, pOr.patterns.get(0), pOr.patterns.get(1));
+
+    case OPTIONAL:
+      // Rewrite as {0,1}
+      final Pattern.OpPattern pOptional = (Pattern.OpPattern) p;
+      return optional(fromState, toState, pOptional.patterns.get(0));
 
     default:
       throw new AssertionError("unknown op " + p.op);
@@ -134,6 +140,22 @@ class AutomatonBuilder {
       add(pattern, prevState, nextState);
       prevState = nextState;
     }
+    return this;
+  }
+
+  /**
+   * Adds a transition for the or pattern
+   */
+  AutomatonBuilder or(State fromState, State toState, Pattern left, Pattern right) {
+    //
+    //             left
+    //         / -------->  toState
+    //  fromState
+    //         \ --------> toState
+    //             right
+
+    add(left, fromState, toState);
+    add(right, fromState, toState);
     return this;
   }
 
@@ -203,6 +225,12 @@ class AutomatonBuilder {
       prevState = s;
     }
     transitionList.add(new EpsilonTransition(prevState, toState));
+    return this;
+  }
+
+  private AutomatonBuilder optional(State fromState, State toState, Pattern pattern) {
+    add(pattern, fromState, toState);
+    transitionList.add(new EpsilonTransition(fromState, toState));
     return this;
   }
 }
