@@ -123,8 +123,9 @@ public class Enumerables {
 
               matcher.matchOne(partitionState.getRows(), partitionState,
                   // TODO 26.12.18 jf: add row states (whatever this is?)
-                  list -> {
-                    emitter.emit(list, null, null, matchCounter.getAndIncrement(), emitRows::add);
+                  match -> {
+                    emitter.emit(match.getRows(), null, match.getSymbols(),
+                        matchCounter.getAndIncrement(), emitRows::add);
                   });
 /*
               recentRows.add(e);
