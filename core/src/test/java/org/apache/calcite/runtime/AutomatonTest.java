@@ -210,7 +210,8 @@ public class AutomatonTest {
       memoryFactory.add(row);
       builder.addAll(matcher.matchOneWithSymbols(memoryFactory.create(), partitionState));
     }
-    assertThat(builder.build().toString(), is("[[(A, a), (B, ab)], [(A, a), (B, b)]]"));
+    //assertThat(builder.build().toString(), is("[[(A, a), (B, ab)], [(A, a), (B, b)]]"));
+    assertThat(builder.build().toString(), is("[[a, ab], [a, b]]"));
   }
 
   /** Converts a string into an iterable collection of its characters. */

@@ -282,11 +282,12 @@ public class Matcher<E> {
         if (i > 0) {
           sb.append(", ");
         }
-        sb.append("(");
-        sb.append(symbols.get(i));
-        sb.append(", ");
+        //sb.append("(");
+        //sb.append(symbols.get(i));
+        //sb.append(", ");
+        //sb.append(rows.get(i));
+        //sb.append(")");
         sb.append(rows.get(i));
-        sb.append(")");
       }
       sb.append("]");
       return sb.toString();
